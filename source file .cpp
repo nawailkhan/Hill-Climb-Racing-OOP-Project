@@ -43,6 +43,7 @@ struct Car {
     float y;
     float width = widthCar, height = heightCar;
     float velocityY = 0;
+    float velocityX = 0;
     bool onGround = false;
 
     void jump() {
@@ -54,6 +55,18 @@ struct Car {
     void applyGravity() {
         velocityY += 1;
         y += velocityY;
+    }
+
+    void applyFriction() {  
+        if (velocityX > 0) {
+            velocityX -= 0.030;  // friction slows you down
+            if (velocityX < 0) velocityX = 0; // stop fully
+        }
+    }
+
+    void accelerate() {  
+        velocityX += 0.5; // acceleration when gas is pressed
+        if (velocityX > 10) velocityX = 10; // max speed limit
     }
 
     void checkTrackCollision(const std::vector<TrackSegment>& track, float carX) {
@@ -119,10 +132,20 @@ int main() {
             if (event.type == ALLEGRO_EVENT_TIMER) {
                 // Movement
                 if (fuel > 0) {
-                    if (key[ALLEGRO_KEY_RIGHT]) cameraX += 5;
-                    if (key[ALLEGRO_KEY_LEFT]) cameraX -= 5;
-                    cameraX = std::max(0.0f, cameraX);
+                    if (key[ALLEGRO_KEY_RIGHT] || key[ALLEGRO_KEY_D]) {  
+                        car.accelerate();
+                    }
+                    else {
+                        car.applyFriction();
+                    }
 
+                    //if (key[ALLEGRO_KEY_LEFT] || key[ALLEGRO_KEY_A]) {  //moving left. since we wont move left i left it out
+                    //    cameraX -= 5;  
+                    //}
+
+                    cameraX += car.velocityX;
+
+                    cameraX = std::max(0.0f, cameraX);
                     //if (key[ALLEGRO_KEY_SPACE] || key[ALLEGRO_KEY_UP]) car.jump(); ->since the cars dont jump?
                 }
                 float carWorldX = cameraX + CAR_SCREEN_X;
@@ -175,4 +198,3 @@ int main() {
 
     return 0;
 }
-
