@@ -57,33 +57,45 @@ struct Car {
         y += velocityY;
     }
 
-    void applyFriction() {  
+    void applyFriction() {
         if (velocityX > 0) {
             velocityX -= 0.030;  // friction slows you down
             if (velocityX < 0) velocityX = 0; // stop fully
         }
     }
 
-    void accelerate() {  
+    void accelerate() {
         velocityX += 0.5; // acceleration when gas is pressed
         if (velocityX > 10) velocityX = 10; // max speed limit
     }
 
     void checkTrackCollision(const std::vector<TrackSegment>& track, float carX) {
+        onGround = false; 
+
         for (const auto& segment : track) {
             if (carX >= segment.x1 && carX <= segment.x2) {
                 float t = (carX - segment.x1) / (segment.x2 - segment.x1);
                 float trackY = segment.y1 + t * (segment.y2 - segment.y1);
+
+                float slope = (segment.y2 - segment.y1) / (segment.x2 - segment.x1); // Rise over run
+
                 if (y + height >= trackY) {
                     y = trackY - height;
                     velocityY = 0;
                     onGround = true;
+
+                    //horizontal sliding
+                    velocityX += slope * 0.5; 
+
+                    if (velocityX > 10) velocityX = 10;
+                    if (velocityX < -10) velocityX = -10;
+
                     return;
                 }
             }
         }
-        onGround = false;
     }
+
 };
 
 int main() {
@@ -132,7 +144,7 @@ int main() {
             if (event.type == ALLEGRO_EVENT_TIMER) {
                 // Movement
                 if (fuel > 0) {
-                    if (key[ALLEGRO_KEY_RIGHT] || key[ALLEGRO_KEY_D]) {  
+                    if (key[ALLEGRO_KEY_RIGHT] || key[ALLEGRO_KEY_D]) {
                         car.accelerate();
                     }
                     else {
@@ -155,7 +167,7 @@ int main() {
                 // fuel slowwly decreases
                 fuel -= 0.095f;
                 if (fuel <= 0) {
-                    fuel=0;
+                    fuel = 0;
                 }
 
                 // Drawing
@@ -172,7 +184,7 @@ int main() {
                 al_draw_scaled_bitmap(car_image, 0, 0, al_get_bitmap_width(car_image), al_get_bitmap_height(car_image),
                     CAR_SCREEN_X, car.y, car.width, car.height, 0);
 
-               // Fuel Bar
+                // Fuel Bar
                 al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0)); // red bar
                 al_draw_rectangle(20, 20, 20 + (100 * 3), 40, al_map_rgb(255, 255, 255), 2);   // white outline
 
