@@ -1,4 +1,3 @@
-
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_image.h>
@@ -17,11 +16,10 @@ void must_init(bool test, const char* description) {
 
 const int SCREEN_W = 1000;
 const int SCREEN_H = 700;
-const float CAR_SCREEN_X = 120; // Fixed car x position 
+const float CAR_SCREEN_X = 120;
 
 const int widthCar = 120;
-const int heightCar = 70;     // scale car image
-
+const int heightCar = 70;
 
 struct TrackSegment {
     float x1, y1, x2, y2;
@@ -32,13 +30,12 @@ std::vector<TrackSegment> generateTrack() {
     float prevY = SCREEN_H * 3 / 4;
 
     for (int x = 0; x < SCREEN_W * 10; x += 50) {
-        float y = (x < CAR_SCREEN_X ? prevY : prevY + (rand() % 40 - 20));   
+        float y = (x < CAR_SCREEN_X ? prevY : prevY + (rand() % 40 - 20));
         y = std::max(100.0f, std::min((float)SCREEN_H - 100, y));
         if (x > 0)
             track.push_back({ (float)x - 50, prevY, (float)x, y });
         prevY = y;
     }
-
     return track;
 }
 
@@ -54,7 +51,7 @@ struct Car {
             onGround = false;
         }
     }
-    void applyGravity() {   //downwards only
+    void applyGravity() {
         velocityY += 1;
         y += velocityY;
     }
@@ -79,10 +76,10 @@ struct Car {
 int main() {
     srand(time(0));
 
-    must_init(al_init(), "allegro");
-    must_init(al_init_primitives_addon(), "primitives");
-    must_init(al_install_keyboard(), "keyboard");
-    must_init(al_init_image_addon(), "image");
+    must_init(al_init(), "Allegro");
+    must_init(al_init_primitives_addon(), "Primitives");
+    must_init(al_install_keyboard(), "Keyboard");
+    must_init(al_init_image_addon(), "Image");
 
     ALLEGRO_DISPLAY* display = al_create_display(SCREEN_W, SCREEN_H);
     must_init(display, "display");
@@ -97,12 +94,11 @@ int main() {
     al_register_event_source(queue, al_get_display_event_source(display));
     al_register_event_source(queue, al_get_timer_event_source(timer));
 
-    ALLEGRO_BITMAP* sky = al_load_bitmap("sky.jpg");
+    ALLEGRO_BITMAP* sky = al_load_bitmap("sky.png");
     must_init(sky, "sky background");
 
     ALLEGRO_BITMAP* car_image = al_load_bitmap("car_image.png");
     must_init(car_image, "car image");
-
 
     bool running = true;
     bool key[ALLEGRO_KEY_MAX] = { false };
@@ -112,6 +108,8 @@ int main() {
     Car car = { SCREEN_H / 2 };
     std::vector<TrackSegment> track = generateTrack();
 
+    float fuel = 100.0f;
+
     al_start_timer(timer);
 
     while (running) {
@@ -120,30 +118,42 @@ int main() {
 
             if (event.type == ALLEGRO_EVENT_TIMER) {
                 // Movement
-                if (key[ALLEGRO_KEY_RIGHT]) cameraX += 5;   // frame moves 
-                if (key[ALLEGRO_KEY_LEFT])  cameraX -= 5;
-                cameraX = std::max(0.0f, cameraX);
+                if (fuel > 0) {
+                    if (key[ALLEGRO_KEY_RIGHT]) cameraX += 5;
+                    if (key[ALLEGRO_KEY_LEFT]) cameraX -= 5;
+                    cameraX = std::max(0.0f, cameraX);
 
+                    //if (key[ALLEGRO_KEY_SPACE] || key[ALLEGRO_KEY_UP]) car.jump(); ->since the cars dont jump?
+                }
                 float carWorldX = cameraX + CAR_SCREEN_X;
-
-                if (key[ALLEGRO_KEY_SPACE] || key[ALLEGRO_KEY_UP]) car.jump();
-
                 car.applyGravity();
                 car.checkTrackCollision(track, carWorldX);
 
+                // fuel slowwly decreases
+                fuel -= 0.095f;
+                if (fuel <= 0) {
+                    fuel=0;
+                }
+
                 // Drawing
+                al_clear_to_color(al_map_rgb(0, 0, 0));
+
                 al_draw_scaled_bitmap(sky, 0, 0, al_get_bitmap_width(sky), al_get_bitmap_height(sky),
                     0, 0, SCREEN_W, SCREEN_H, 0);
 
                 for (const auto& segment : track) {
                     al_draw_line(segment.x1 - cameraX, segment.y1, segment.x2 - cameraX, segment.y2,
-                        al_map_rgb(0, 0, 0), 8);    
+                        al_map_rgb(0, 0, 0), 8);
                 }
-               
-            al_draw_scaled_bitmap(car_image,0, 0, al_get_bitmap_width(car_image), al_get_bitmap_height(car_image),
-                                  CAR_SCREEN_X, car.y, car.width, car.height, 0);
 
-             al_flip_display();
+                al_draw_scaled_bitmap(car_image, 0, 0, al_get_bitmap_width(car_image), al_get_bitmap_height(car_image),
+                    CAR_SCREEN_X, car.y, car.width, car.height, 0);
+
+               // Fuel Bar
+                al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0)); // red bar
+                al_draw_rectangle(20, 20, 20 + (100 * 3), 40, al_map_rgb(255, 255, 255), 2);   // white outline
+
+                al_flip_display();
             }
             else if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
                 running = false;
