@@ -32,14 +32,41 @@ struct TrackSegment {
 
 std::vector<TrackSegment> generateTrack() {
     std::vector<TrackSegment> track;
+    std::vector<float> controlPoints;
+    const int numPoints = 200;
+    const int segmentLength = 50;
+
     float prevY = SCREEN_H * 3 / 4;
-    for (int x = 0; x < SCREEN_W * 10; x += 50) {
-        float y = (x < CAR_SCREEN_X ? prevY : prevY + (rand() % 40 - 20));
-        y = std::max(100.0f, std::min((float)SCREEN_H - 100, y));
-        if (x > 0)
-            track.push_back({ (float)x - 50, prevY, (float)x, y });
-        prevY = y;
+    controlPoints.push_back(prevY);
+
+    // Generate control points with controlled randomness
+    for (int i = 1; i < numPoints; ++i) {
+        float offset = (rand() % 60 - 30);
+        float newY = clamp(controlPoints.back() + offset, 100.0f, (float)SCREEN_H - 100);
+        controlPoints.push_back(newY);
     }
+
+    for (int i = 0; i < (int)controlPoints.size() - 1; ++i) {
+        float x_start = i * segmentLength;
+        float y1 = controlPoints[i];
+        float y2 = controlPoints[i + 1];
+
+        for (int j = 0; j < segmentLength; ++j) {
+            float t = (float)j / segmentLength;
+            float t2 = (1 - cos(t * ALLEGRO_PI)) / 2; // cosine interpolation
+            float y = y1 * (1 - t2) + y2 * t2;
+
+            float x1 = x_start + j;
+            float x2 = x_start + j + 1;
+
+            float next_t = (float)(j + 1) / segmentLength;
+            float next_t2 = (1 - cos(next_t * ALLEGRO_PI)) / 2;
+            float y_next = y1 * (1 - next_t2) + y2 * next_t2;
+
+            track.push_back({ x1, y, x2, y_next });
+        }
+    }
+
     return track;
 }
 
@@ -80,34 +107,45 @@ struct Car {
     }
 
     void accelerate() {
-        velocityX += 0.5;
-        velocityX = clamp(velocityX, 0.0f, 10.0f);
+        velocityX += 0.35;
+        velocityX = clamp(velocityX, 0.0f, 8.0f);
     }
 
     void checkTrackCollision(const std::vector<TrackSegment>& track, float carX) {
         onGround = false;
 
-        for (const auto& segment : track) {
-            if (carX >= segment.x1 && carX <= segment.x2) {
-                float t = (carX - segment.x1) / (segment.x2 - segment.x1);
-                float trackY = segment.y1 + t * (segment.y2 - segment.y1);
-                float slope = (segment.y2 - segment.y1) / (segment.x2 - segment.x1);
+        float rearX = carX;
+        float frontX = carX + width;
 
-                if (y + height >= trackY) {
-                    y = trackY - height;
-                    velocityY = 0;
-                    onGround = true;
+        float rearY = y + height;
+        float frontY = y + height;
 
-                    angle = atan(slope) * (180.0f / ALLEGRO_PI);
-                    angularVelocity = 0;
-
-                    velocityX += slope * 0.5;
-                    velocityX = clamp(velocityX, -10.0f, 10.0f);
-                    return;
+        auto getTrackY = [&](float x) -> float {
+            for (const auto& segment : track) {
+                if (x >= segment.x1 && x <= segment.x2) {
+                    float t = (x - segment.x1) / (segment.x2 - segment.x1);
+                    return segment.y1 + t * (segment.y2 - segment.y1);
                 }
             }
-        }
+            return SCREEN_H; // Fallback (off screen)
+            };
+
+        float trackRearY = getTrackY(rearX);
+        float trackFrontY = getTrackY(frontX);
+
+        float dx = frontX - rearX;
+        float dy = trackFrontY - trackRearY;
+
+        float desiredAngle = atan2(dy, dx) * (180.0f / ALLEGRO_PI);
+        float avgY = (trackRearY + trackFrontY) / 2.0f;
+
+        y = avgY - height;
+        angle = desiredAngle;
+        angularVelocity = 0;
+        velocityY = 0;
+        onGround = true;
     }
+
 };
 
 int main() {
