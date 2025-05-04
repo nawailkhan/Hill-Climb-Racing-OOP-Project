@@ -14,6 +14,7 @@ private:
     bool onGround;
     float angle;
     float angularVelocity;
+    float getTerrainAdjustedAcceleration() const;
 
 public:
     Car(float startY, float width = WIDTH_CAR, float height = HEIGHT_CAR);
