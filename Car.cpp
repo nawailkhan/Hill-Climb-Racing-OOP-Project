@@ -21,6 +21,7 @@ float Car::getTerrainAdjustedAcceleration() const {
 }
 
 void Car::accelerate(float amount) {
+    amount = 0.10f;
     float adjustedAcceleration = getTerrainAdjustedAcceleration();
     velocityX += amount * adjustedAcceleration;
     //velocityX = clamp(velocityX, 0.0f, 92.0f); // Allow higher max speed
