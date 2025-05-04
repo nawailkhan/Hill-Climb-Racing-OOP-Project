@@ -7,13 +7,18 @@ Car::Car(float startY, float width, float height) :
     onGround(false), angle(0), angularVelocity(0) {
 }
 
-// void Car::jump() {
-//     if (onGround) {
-//         velocityY = Physics::JUMP_FORCE;
-//         angularVelocity = -4.0f;
-//         onGround = false;
-//     }
-// }
+void Car::jump() {
+    if (onGround) {
+        velocityY = Physics::JUMP_FORCE;
+        angularVelocity = -4.0f;
+        onGround = false;
+    }
+}
+
+float Car::getTerrainAdjustedAcceleration() const {
+    // Example implementation - adjust based on slope
+    return std::cos(angle * ALLEGRO_PI / 180.0f);
+}
 
 void Car::accelerate(float amount) {
     float adjustedAcceleration = getTerrainAdjustedAcceleration();
@@ -33,7 +38,7 @@ void Car::update(const Track& track, float carX) {
     // Apply physics
     Physics::applyGravity(velocityY, onGround);
     Physics::applyAirResistance(velocityX, velocityY);
-    
+
     if (!onGround) {
         angularVelocity += Physics::calculateAngularAcceleration(angle);
         angle += angularVelocity;
@@ -61,4 +66,3 @@ void Car::update(const Track& track, float carX) {
     velocityY = 0;
     onGround = true;
 }
-
