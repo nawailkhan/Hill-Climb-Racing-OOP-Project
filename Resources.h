@@ -20,9 +20,8 @@ const float CAR_SCREEN_X = 120;
 const int WIDTH_CAR = 120;
 const int HEIGHT_CAR = 70;
 
-// Utility functions
 template<typename T>
-const T& clamp(const T& value, const T& low, const T& high) {
+inline const T& clamp(const T& value, const T& low, const T& high) {
     return (value < low) ? low : (value > high) ? high : value;
 }
 
