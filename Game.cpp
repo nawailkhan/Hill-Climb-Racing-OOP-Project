@@ -3,6 +3,7 @@
 #include "Track.h"
 #include "Car.h"
 #include "Resources.h"
+#include "Collectibles.h"
 #include <iostream>
 
 Game::Game() :
@@ -16,10 +17,12 @@ Game::Game() :
     gameOverShown(false),
     cameraX(0),
     fuel(100.0f),
+    
     car(SCREEN_H / 2) {
 
     for (bool& k : key) k = false;
     initialize();
+    fuelTank = SpawnFuelTank(track); // Spawn fuel tank after track is ready
 }
 
 Game::~Game() {
@@ -52,7 +55,7 @@ void Game::initialize() {
     al_register_event_source(queue, al_get_display_event_source(display));
     al_register_event_source(queue, al_get_timer_event_source(timer));
 
-    sky = al_load_bitmap("sky.png");
+    sky = al_load_bitmap("sky.jpg");
     must_init(sky, "sky background");
 
     car_image = al_load_bitmap("car_image.png");
@@ -108,6 +111,16 @@ void Game::update() {
                 "You crashed by flipping over!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
         }
 
+        if (fuelTank && !fuelTank->isCollected()) {
+            float carX = cameraX + CAR_SCREEN_X;
+            if (carX + WIDTH_CAR > fuelTank->getX() &&
+                carX < fuelTank->getX() + 30.0f &&
+                car.getY() + HEIGHT_CAR > fuelTank->getY() &&
+                car.getY() < fuelTank->getY() + 30.0f) {
+                fuelTank->applyEffect(*this);
+            }
+        }
+
         //fuel update
         fuel -= 0.095f;
         fuel = std::max(0.0f, fuel);
@@ -124,7 +137,7 @@ void Game::render() {
         al_draw_line(segment.x1 - cameraX, segment.y1, segment.x2 - cameraX, segment.y2,
             al_map_rgb(0, 0, 0), 8);
     }
-    
+
     // car
     if (!car_image) {
         al_draw_filled_rectangle(
@@ -133,6 +146,9 @@ void Game::render() {
             al_map_rgb(255, 0, 0));
         return;
     }
+
+    if (fuelTank) fuelTank->render();
+    al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0));
 
     float img_w = al_get_bitmap_width(car_image);
     float img_h = al_get_bitmap_height(car_image);
@@ -146,14 +162,14 @@ void Game::render() {
     // this prevented transparency otherwise the car wasnt visible idk why
     al_draw_circle(center_x, center_y, 10, al_map_rgb(0, 255, 0), 2);
     // this draws green circle at car's centre whch makes it easier to identify the problem
-	// the car was being initialozed it was just not visible so the set bender command did the work
+    // the car was being initialozed it was just not visible so the set bender command did the work
     al_draw_scaled_rotated_bitmap(
         car_image,
         img_w / 2, img_h / 2,    // center of bitmap
         center_x, center_y,   // pos on screen
         scale_x, scale_y,     // scale factors
         angle_rad,            // rotation in radians
-		0); 
+        0);
 
     // fuel bar
     al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0));
@@ -177,4 +193,9 @@ void Game::run() {
         update();
         render();
     }
+}
+
+void Game::addFuel(float amount) {
+    fuel += amount;
+    if (fuel > 100.0f) fuel = 100.0f;
 }
