@@ -16,15 +16,28 @@ void Car::jump() {
 }
 
 float Car::getTerrainAdjustedAcceleration() const {
-    // Example implementation - adjust based on slope
-    return std::cos(angle * ALLEGRO_PI / 180.0f);
+    // Calculate acceleration adjustment based on terrain angle
+    // Positive angle means uphill (slower acceleration)
+    // Negative angle means downhill (faster acceleration)
+    float slopeEffect = -sin(angle * ALLEGRO_PI / 180.0f);
+
+    // Base multiplier (1.0) plus slope effect
+    // Downhill (negative angle) will increase acceleration
+    // Uphill (positive angle) will decrease acceleration
+    return 1.0f + slopeEffect * 0.8f; // 0.8 controls the intensity of the effect
 }
 
 void Car::accelerate(float amount) {
-    amount = 0.10f;
+    // Reduce the base acceleration amount to slow down the car overall
+    float reducedAmount = amount * 0.35f; // 60% of original acceleration
+
     float adjustedAcceleration = getTerrainAdjustedAcceleration();
-    velocityX += amount * adjustedAcceleration;
-    //velocityX = clamp(velocityX, 0.0f, 92.0f); // Allow higher max speed
+    velocityX += reducedAmount * adjustedAcceleration;
+
+    // Add velocity clamping back to control maximum speed
+    // Lower the maximum speed limit
+    const float MAX_SPEED = 15.0f; // Lower than the original implicit limit
+    if (velocityX > MAX_SPEED) velocityX = MAX_SPEED;
 }
 
 void Car::applyFriction() {
@@ -45,19 +58,17 @@ void Car::update(const Track& track, float carX) {
         angle += angularVelocity;
         angularVelocity *= Physics::ROTATION_DAMPING;
     }
+
     y += velocityY;
 
     //track collision
     onGround = false;
     float rearX = carX;
     float frontX = carX + width;
-
     float trackRearY = track.getYAtPosition(rearX);
     float trackFrontY = track.getYAtPosition(frontX);
-
     float dx = frontX - rearX;
     float dy = trackFrontY - trackRearY;
-
     float desiredAngle = atan2(dy, dx) * (180.0f / ALLEGRO_PI);
     float avgY = (trackRearY + trackFrontY) / 2.0f;
 
