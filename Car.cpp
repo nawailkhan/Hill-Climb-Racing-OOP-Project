@@ -77,7 +77,7 @@ void Car::update(const Track& track, float carX) {
     float desiredAngle = atan2(dy, dx) * (180.0f / ALLEGRO_PI);
     float avgY = (trackRearY + trackFrontY) / 2.0f;
 
-    y = avgY - height;
+    y = avgY - height -6.0f;
     angle = desiredAngle;
     angularVelocity = 0;
     velocityY = 0;
