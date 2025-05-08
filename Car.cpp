@@ -4,7 +4,7 @@
 Car::Car(float startY, float width, float height) :
     y(startY), width(width), height(height),
     velocityY(0), velocityX(0),
-    onGround(false), angle(0), angularVelocity(0){
+    onGround(false), angle(0), angularVelocity(0) {
 }
 
 void Car::jump() {
@@ -29,7 +29,7 @@ float Car::getTerrainAdjustedAcceleration() const {
 
 void Car::accelerate(float amount) {
     // Reduce the base acceleration amount to slow down the car overall
-    float reducedAmount = amount * 0.35f; // 60% of original acceleration
+    float reducedAmount = amount * 0.25f; // 60% of original acceleration
 
     float adjustedAcceleration = getTerrainAdjustedAcceleration();
     velocityX += reducedAmount * adjustedAcceleration;
