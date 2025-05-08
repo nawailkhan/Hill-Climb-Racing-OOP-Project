@@ -4,7 +4,7 @@
 Car::Car(float startY, float width, float height) :
     y(startY), width(width), height(height),
     velocityY(0), velocityX(0),
-    onGround(false), angle(0), angularVelocity(0) {
+    onGround(false), angle(0), angularVelocity(0){
 }
 
 void Car::jump() {
@@ -51,7 +51,12 @@ void Car::rotate(float direction) {
 void Car::update(const Track& track, float carX) {
     // Apply physics
     Physics::applyGravity(velocityY, onGround);
-    Physics::applyAirResistance(velocityX, velocityY);
+    float rearY = track.getYAtPosition(carX);
+    float frontY = track.getYAtPosition(carX + width);
+    currentSlopeAngle = atan2(frontY - rearY, width) * 180.0f / ALLEGRO_PI;
+
+    // Then apply physics
+    Physics::applyAirResistance(velocityX, velocityY, currentSlopeAngle);
 
     if (!onGround) {
         angularVelocity += Physics::calculateAngularAcceleration(angle);
