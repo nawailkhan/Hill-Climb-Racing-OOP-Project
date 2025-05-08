@@ -31,6 +31,7 @@ private:
     float angularVelocity;
 
     float getTerrainAdjustedAcceleration() const;
+    float currentSlopeAngle;
 
 
 
@@ -77,3 +78,4 @@ public:
 
 
 #endif
+
