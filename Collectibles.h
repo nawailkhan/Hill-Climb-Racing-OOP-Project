@@ -12,7 +12,7 @@ protected:
 public:
     Collectible(float x, float y, float width, float height);
     virtual void update(float deltaTime);
-    virtual void render() = 0;
+    virtual void render(float cameraX) = 0;
     virtual void applyEffect(Game& game) = 0;
     void collect() { collected = true; }
     bool isCollected() const { return collected; }
@@ -23,7 +23,7 @@ public:
     FuelTank(float x, float y);
     ~FuelTank();
     void update(float deltaTime) override;
-    void render() override;
+    void render(float cameraX) override;
     void applyEffect(Game& game) override;
 
 private:
