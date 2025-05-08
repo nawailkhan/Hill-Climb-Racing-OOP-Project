@@ -17,12 +17,14 @@ Game::Game() :
     gameOverShown(false),
     cameraX(0),
     fuel(100.0f),
-    
+
     car(SCREEN_H / 2) {
 
     for (bool& k : key) k = false;
     initialize();
-    fuelTank = SpawnFuelTank(track); // Spawn fuel tank after track is ready
+    for (int i = 0; i < 10; ++i) {  
+        fuelTanks.push_back(SpawnFuelTank(track));
+    } 
 }
 
 Game::~Game() {
@@ -38,6 +40,10 @@ void Game::initialize() {
     must_init(al_init_image_addon(), "Image");
     must_init(al_init_font_addon(), "Font");
     must_init(al_init_native_dialog_addon(), "Native Dialog");
+    must_init(al_init_ttf_addon(), "ttf addon");
+
+    font = al_create_builtin_font();
+	must_init(font, "font");
 
     display = al_create_display(SCREEN_W, SCREEN_H);
     must_init(display, "display");
@@ -49,13 +55,17 @@ void Game::initialize() {
     must_init(timer, "timer");
 
     font = al_create_builtin_font();
+    font = al_load_ttf_font("arial.ttf", 32, 0); 
     must_init(font, "font");
 
     al_register_event_source(queue, al_get_keyboard_event_source());
     al_register_event_source(queue, al_get_display_event_source(display));
     al_register_event_source(queue, al_get_timer_event_source(timer));
+   
+    fuelImage = al_load_bitmap("fueltank.png");
+	must_init(fuelImage, "fuel image");
 
-    sky = al_load_bitmap("sky.jpg");
+    sky = al_load_bitmap("sky.png");
     must_init(sky, "sky background");
 
     car_image = al_load_bitmap("car_image.png");
@@ -111,15 +121,19 @@ void Game::update() {
                 "You crashed by flipping over!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
         }
 
-        if (fuelTank && !fuelTank->isCollected()) {
-            float carX = cameraX + CAR_SCREEN_X;
-            if (carX + WIDTH_CAR > fuelTank->getX() &&
-                carX < fuelTank->getX() + 30.0f &&
-                car.getY() + HEIGHT_CAR > fuelTank->getY() &&
-                car.getY() < fuelTank->getY() + 30.0f) {
-                fuelTank->applyEffect(*this);
+        float carX = cameraX + CAR_SCREEN_X;
+
+        for (FuelTank* tank : fuelTanks) {
+            if (!tank->isCollected()) {
+                if (carX + WIDTH_CAR > tank->getX() &&
+                    carX < tank->getX() + tank->getWidth() &&
+                    car.getY() + HEIGHT_CAR > tank->getY() &&
+                    car.getY() < tank->getY() + tank->getHeight()) {
+                    tank->applyEffect(*this);
+                }
             }
         }
+        score = static_cast<int>(cameraX / 10.0f); // Adjust scale: every 10 pixels = 1 "meter"
 
         //fuel update
         fuel -= 0.095f;
@@ -147,7 +161,10 @@ void Game::render() {
         return;
     }
 
-    if (fuelTank) fuelTank->render();
+    for (FuelTank* tank : fuelTanks) {
+        tank->render(cameraX);
+    }
+
     al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0));
 
     float img_w = al_get_bitmap_width(car_image);
@@ -175,6 +192,16 @@ void Game::render() {
     al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0));
     al_draw_rectangle(20, 20, 20 + 300, 40, al_map_rgb(255, 255, 255), 2);
 
+    al_draw_textf(font, al_map_rgb(255, 255, 255), 20, 50, 0, "Fuel: %.1f%%", fuel);
+
+    char scoreText[64];
+    snprintf(scoreText, sizeof(scoreText), "Distance: %d m", score);
+    al_draw_filled_rectangle(SCREEN_W - 220, 15, SCREEN_W - 20, 45, al_map_rgba(0, 0, 0, 180));
+    al_draw_text(font, al_map_rgb(255, 255, 255), SCREEN_W - 210, 20, 0, scoreText);
+
+    al_draw_text(font, al_map_rgb(255, 255, 255),
+        SCREEN_W - 200, 20, 0, scoreText);
+
     al_flip_display();
 }
 
@@ -185,6 +212,10 @@ void Game::cleanUp() {
     al_destroy_timer(timer);
     al_destroy_bitmap(sky);
     al_destroy_bitmap(car_image);
+    for (FuelTank* tank : fuelTanks) {
+        delete tank;
+    }
+    fuelTanks.clear();
 }
 
 void Game::run() {
