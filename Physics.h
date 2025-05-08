@@ -17,6 +17,9 @@ public:
     static const float JUMP_FORCE;
 
     static const float ROTATION_DAMPING;
+    static const float HILL_CLIMB_RESISTANCE; 
+    static const float HILL_DESCEND_BOOST;     
+    static const float AIR_RESISTANCE;
 
 
 
@@ -24,7 +27,7 @@ public:
 
     static void applyFriction(float& velocityX);
 
-    static void applyAirResistance(float& velocityX, float& velocityY);
+    static void applyAirResistance(float& velocityX, float& velocityY, float slopeAngle);
 
     static bool checkFlipCondition(float angle);
 
