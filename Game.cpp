@@ -188,21 +188,18 @@ void Game::render() {
         angle_rad,            // rotation in radians
         0);
 
-    // fuel bar
-    al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0));
-    al_draw_rectangle(20, 20, 20 + 300, 40, al_map_rgb(255, 255, 255), 2);
-
-    al_draw_textf(font, al_map_rgb(255, 255, 255), 20, 50, 0, "Fuel: %.1f%%", fuel);
-
-    char scoreText[64];
-    snprintf(scoreText, sizeof(scoreText), "Distance: %d m", score);
-    al_draw_filled_rectangle(SCREEN_W - 220, 15, SCREEN_W - 20, 45, al_map_rgba(0, 0, 0, 180));
-    al_draw_text(font, al_map_rgb(255, 255, 255), SCREEN_W - 210, 20, 0, scoreText);
-
-    al_draw_text(font, al_map_rgb(255, 255, 255),
-        SCREEN_W - 200, 20, 0, scoreText);
-
-    al_flip_display();
+	al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0));
+	al_draw_rectangle(20, 20, 20 + 300, 40, al_map_rgb(255, 255, 255), 2);
+	
+	al_draw_textf(font, al_map_rgb(255, 255, 255), 20, 50, 0, "Fuel: %.1f%%", fuel);
+	
+	char scoreText[64];
+	snprintf(scoreText, sizeof(scoreText), "Distance: %d m", score);
+	al_draw_filled_rectangle(SCREEN_W - 280,5, SCREEN_W - 10, 60, al_map_rgba(0, 0, 0, 180));
+	al_draw_text(font, al_map_rgb(255, 255, 255), SCREEN_W - 250, 15, 0, scoreText);
+	
+	
+	al_flip_display();
 }
 
 void Game::cleanUp() {
