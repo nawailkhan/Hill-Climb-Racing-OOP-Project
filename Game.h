@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 #include <allegro5/allegro.h>
+#include <allegro5/allegro_ttf.h>
 #include "Resources.h"
 #include "Car.h"
 #include "Track.h"
@@ -13,6 +14,8 @@ private:
     ALLEGRO_FONT* font;
     ALLEGRO_BITMAP* sky;
     ALLEGRO_BITMAP* car_image;
+	ALLEGRO_BITMAP* fuelImage;
+
     bool running;
     bool gameOverShown;
     bool key[ALLEGRO_KEY_MAX];
@@ -20,13 +23,15 @@ private:
     float fuel;
     Car car;
     Track track;
-    FuelTank* fuelTank = nullptr;
-    
+    std::vector<FuelTank*> fuelTanks;
+
     void initialize();
     void handleEvents();
     void update();
     void render();
     void cleanUp();
+    int score = 0;
+
 public:
     Game();
     void addFuel(float amount);
@@ -34,4 +39,3 @@ public:
     void run();
 };
 #endif 
-
