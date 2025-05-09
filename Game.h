@@ -19,6 +19,7 @@ private:
     ALLEGRO_BITMAP* fuelImage;
     ALLEGRO_BITMAP* coinImage;
     ALLEGRO_BITMAP* gameOverImage;
+    ALLEGRO_FONT* smallFont;
 
     bool fuelEmpty;
     bool running;
