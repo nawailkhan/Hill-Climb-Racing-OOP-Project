@@ -33,6 +33,8 @@ private:
     std::vector<Coin*> coins;
     ALLEGRO_SAMPLE* music = nullptr;
     ALLEGRO_SAMPLE_INSTANCE* backgroundMusic = nullptr;
+    ALLEGRO_SAMPLE* gameover = nullptr;; // Add this to class members
+
 
 
     void initialize();
