@@ -18,7 +18,9 @@ private:
     ALLEGRO_BITMAP* car_image;
     ALLEGRO_BITMAP* fuelImage;
     ALLEGRO_BITMAP* coinImage;
+    ALLEGRO_BITMAP* gameOverImage;
 
+    bool fuelEmpty;
     bool running;
     bool gameOverShown;
     bool key[ALLEGRO_KEY_MAX];
