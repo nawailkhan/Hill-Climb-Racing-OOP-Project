@@ -105,6 +105,10 @@ void Game::initialize() {
     gameOverImage = al_load_bitmap("game_over.jpg");
     must_init(gameOverImage, "game over image");
 
+    gameover = al_load_sample("gameover.mp3");
+    must_init(gameover, "Game Over music");
+
+
     al_attach_sample_instance_to_mixer(backgroundMusic, al_get_default_mixer());
     al_set_sample_instance_gain(backgroundMusic, 0.5);  // Adjust volume as needed
     al_set_sample_instance_playmode(backgroundMusic, ALLEGRO_PLAYMODE_LOOP);
@@ -133,12 +137,23 @@ void Game::handleEvents() {
 
 void Game::update() {
     if (fuel > 0 && !gameOverShown) {
-        if (key[ALLEGRO_KEY_RIGHT] || key[ALLEGRO_KEY_D]) {
+        /*if (key[ALLEGRO_KEY_RIGHT] || key[ALLEGRO_KEY_D]) {
             car.accelerate();
         }
         else {
             car.applyFriction();
+        }*/
+
+        if (key[ALLEGRO_KEY_RIGHT] || key[ALLEGRO_KEY_D]) {
+            car.accelerate(0.35f); // forward
         }
+        else if (key[ALLEGRO_KEY_LEFT] || key[ALLEGRO_KEY_A]) {
+            car.accelerate(-0.35f); // backward
+        }
+        else {
+            car.applyFriction();
+        }
+
 
         if (key[ALLEGRO_KEY_SPACE]) {
             car.jump();
@@ -157,9 +172,13 @@ void Game::update() {
 
         if (Physics::checkFlipCondition(car.getAngle()) && !gameOverShown) {
             gameOverShown = true;
+            if (backgroundMusic) al_stop_sample_instance(backgroundMusic);
+            al_play_sample(gameover, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, nullptr);
+
             al_show_native_message_box(display, "Game Over", "Car Flipped!",
                 "You crashed by flipping over!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
         }
+
 
         float carX = cameraX + CAR_SCREEN_X;
 
@@ -193,6 +212,10 @@ void Game::update() {
     if (fuel <= 0 && !fuelEmpty) {
         fuelEmpty = true;
         gameOverShown = true;
+
+        // Stop racing music and play game over sound
+        if (backgroundMusic) al_stop_sample_instance(backgroundMusic);
+        al_play_sample(gameover, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, nullptr);
     }
 
 }
