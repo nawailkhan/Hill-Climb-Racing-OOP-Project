@@ -1,7 +1,7 @@
 #include "Track.h"
 Track::Track() {
     std::vector<float> controlPoints;
-    const int numPoints = 200;
+    const int numPoints = 400;
     const int segmentLength = 50;
     float prevY = SCREEN_H * 3 / 4;
     controlPoints.push_back(prevY);
