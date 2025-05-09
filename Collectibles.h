@@ -30,4 +30,18 @@ private:
     ALLEGRO_BITMAP* image = nullptr; // Declare image variable
 };
 FuelTank* SpawnFuelTank(const Track& track);
+
+class Coin : public Collectible {
+public:
+    Coin(float x, float y);
+    ~Coin();
+    void update(float deltaTime) override;
+    void render(float cameraX) override;
+    void applyEffect(Game& game) override;
+
+private:
+    ALLEGRO_BITMAP* image = nullptr; // Declare image variable
+};
+Coin* SpawnCoin(const Track& track);
+
 #endif
