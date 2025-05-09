@@ -28,16 +28,15 @@ float Car::getTerrainAdjustedAcceleration() const {
 }
 
 void Car::accelerate(float amount) {
-    // Reduce the base acceleration amount to slow down the car overall
-    float reducedAmount = amount * 0.25f; // 60% of original acceleration
+    float reducedAmount = amount * 0.25f;
 
     float adjustedAcceleration = getTerrainAdjustedAcceleration();
     velocityX += reducedAmount * adjustedAcceleration;
 
-    // Add velocity clamping back to control maximum speed
-    // Lower the maximum speed limit
-    const float MAX_SPEED = 15.0f; // Lower than the original implicit limit
+    // Add velocity clamping for both directions
+    const float MAX_SPEED = 15.0f;
     if (velocityX > MAX_SPEED) velocityX = MAX_SPEED;
+    if (velocityX < -MAX_SPEED) velocityX = -MAX_SPEED;
 }
 
 void Car::applyFriction() {
