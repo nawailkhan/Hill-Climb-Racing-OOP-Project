@@ -33,7 +33,7 @@ void FuelTank::render(float cameraX) {
 
 
 void FuelTank::applyEffect(Game& game) {
-    game.addFuel(60.0f); // Increase fuel by 10%
+    game.addFuel(20.0f); 
     al_play_sample(game.collectSound, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, nullptr);
     collect();
 }
