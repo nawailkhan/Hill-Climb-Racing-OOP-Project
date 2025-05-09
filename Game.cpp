@@ -62,6 +62,8 @@ void Game::initialize() {
 
     font = al_create_builtin_font();
     must_init(font, "font");
+    smallFont = al_load_ttf_font("arial.ttf", 20, 0);  // Smaller font for icons
+    must_init(smallFont, "small font");
 
     display = al_create_display(SCREEN_W, SCREEN_H);
     must_init(display, "display");
@@ -105,10 +107,6 @@ void Game::initialize() {
     gameOverImage = al_load_bitmap("game_over.jpg");
     must_init(gameOverImage, "game over image");
 
-    gameover = al_load_sample("gameover.mp3");
-    must_init(gameover, "Game Over music");
-
-
     al_attach_sample_instance_to_mixer(backgroundMusic, al_get_default_mixer());
     al_set_sample_instance_gain(backgroundMusic, 0.5);  // Adjust volume as needed
     al_set_sample_instance_playmode(backgroundMusic, ALLEGRO_PLAYMODE_LOOP);
@@ -137,23 +135,12 @@ void Game::handleEvents() {
 
 void Game::update() {
     if (fuel > 0 && !gameOverShown) {
-        /*if (key[ALLEGRO_KEY_RIGHT] || key[ALLEGRO_KEY_D]) {
+        if (key[ALLEGRO_KEY_RIGHT] || key[ALLEGRO_KEY_D]) {
             car.accelerate();
         }
         else {
             car.applyFriction();
-        }*/
-
-        if (key[ALLEGRO_KEY_RIGHT] || key[ALLEGRO_KEY_D]) {
-            car.accelerate(0.35f); // forward
         }
-        else if (key[ALLEGRO_KEY_LEFT] || key[ALLEGRO_KEY_A]) {
-            car.accelerate(-0.35f); // backward
-        }
-        else {
-            car.applyFriction();
-        }
-
 
         if (key[ALLEGRO_KEY_SPACE]) {
             car.jump();
@@ -172,13 +159,9 @@ void Game::update() {
 
         if (Physics::checkFlipCondition(car.getAngle()) && !gameOverShown) {
             gameOverShown = true;
-            if (backgroundMusic) al_stop_sample_instance(backgroundMusic);
-            al_play_sample(gameover, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, nullptr);
-
             al_show_native_message_box(display, "Game Over", "Car Flipped!",
                 "You crashed by flipping over!", NULL, ALLEGRO_MESSAGEBOX_ERROR);
         }
-
 
         float carX = cameraX + CAR_SCREEN_X;
 
@@ -212,10 +195,6 @@ void Game::update() {
     if (fuel <= 0 && !fuelEmpty) {
         fuelEmpty = true;
         gameOverShown = true;
-
-        // Stop racing music and play game over sound
-        if (backgroundMusic) al_stop_sample_instance(backgroundMusic);
-        al_play_sample(gameover, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, nullptr);
     }
 
 }
@@ -230,8 +209,17 @@ void Game::render() {
 
         // Track
         for (const auto& segment : track.getSegments()) {
-            al_draw_line(segment.x1 - cameraX, segment.y1, segment.x2 - cameraX, segment.y2,
-                al_map_rgb(0, 0, 0), 8);
+            float x1 = segment.x1 - cameraX;
+            float y1 = segment.y1;
+            float x2 = segment.x2 - cameraX;
+            float y2 = segment.y2;
+
+            // Fill the road below the segment with brown
+            al_draw_filled_triangle(x1, y1, x2, y2, x1, SCREEN_H, al_map_rgb(139, 69, 19)); // SaddleBrown
+            al_draw_filled_triangle(x2, y2, x1, SCREEN_H, x2, SCREEN_H, al_map_rgb(139, 69, 19));
+
+            // Draw green outline (grass edges)
+            al_draw_line(x1, y1, x2, y2, al_map_rgb(34, 139, 34), 2); // ForestGreen outline
         }
 
         // Collectibles
@@ -262,12 +250,29 @@ void Game::render() {
         // UI Elements
         al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0));
         al_draw_rectangle(20, 20, 20 + 300, 40, al_map_rgb(255, 255, 255), 2);
-        al_draw_textf(font, al_map_rgb(255, 255, 255), 20, 50, 0, "Fuel: %.1f%%", fuel);
+        //al_draw_bitmap(fuelImage, 20, 50, 0);
+        /*al_draw_textf(font, al_map_rgb(255, 255, 255), 60, 55, 0, "%.1f%%", fuel);*/
 
         char scoreText[64];
         snprintf(scoreText, sizeof(scoreText), "Distance: %d m", score);
         al_draw_filled_rectangle(SCREEN_W - 280, 5, SCREEN_W - 10, 60, al_map_rgba(0, 0, 0, 180));
         al_draw_text(font, al_map_rgb(255, 255, 255), SCREEN_W - 250, 15, 0, scoreText);
+        
+  //      al_draw_bitmap(coinImage, 20, 10, 0);  // Draw coin icon below fuel
+		//al_draw_textf(font, al_map_rgb(255, 255, 255), 60, 95, 0, "%d", coin);
+
+        al_draw_scaled_bitmap(coinImage, 0, 0,
+            al_get_bitmap_width(coinImage), al_get_bitmap_height(coinImage),
+            20, 90, 32, 32, 0);  
+        al_draw_textf(smallFont, al_map_rgb(255, 255, 255), 60, 95, 0, "%d", coin);
+
+        al_draw_scaled_bitmap(fuelImage, 0, 0,
+            al_get_bitmap_width(fuelImage), al_get_bitmap_height(fuelImage),
+            20, 50, 32, 32, 0);
+        al_draw_textf(smallFont, al_map_rgb(255, 255, 255), 60, 55, 0, "%.1f%%", fuel);
+
+     
+
     }
     else {
         // Game Over Screen
