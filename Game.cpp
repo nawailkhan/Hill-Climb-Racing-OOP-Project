@@ -17,21 +17,22 @@ Game::Game() :
     gameOverShown(false),
     cameraX(0),
     fuel(100.0f),
-    //coin(5),
+    coin(0),
 
     car(SCREEN_H / 2) {
 
     for (bool& k : key) k = false;
     initialize();
+    srand(time(0));
     for (int i = 0; i < 10; ++i) {
         fuelTanks.push_back(SpawnFuelTank(track));
     }
 
-    /*for (bool& i : key) i = false;
-    initialize();
+    for (bool& i : key) i = false;
+    srand(time(0) + 1000); 
     for (int i = 0; i < 10; ++i) {
         coins.push_back(SpawnCoin(track));
-    }*/
+    }
 }
 
 Game::~Game() {
@@ -82,8 +83,8 @@ void Game::initialize() {
     car_image = al_load_bitmap("car_image.png");
     must_init(car_image, "car image");
 
-    /*coinImage = al_load_bitmap("Coin.jpg");
-    must_init(coinImage, "coinImage");*/
+    coinImage = al_load_bitmap("Coin.jpg");
+    must_init(coinImage, "coinImage");
 
     collectSound = al_load_sample("collect.mp3");   // when fuel or coin collected
     must_init(collectSound, "collect sound");
@@ -168,7 +169,7 @@ void Game::update() {
         fuel -= 0.095f;
         fuel = std::max(0.0f, fuel);
 
-        /*for (Coin* coin : coins) {
+        for (Coin* coin : coins) {
             if (!coin->isCollected()) {
                 if (carX + WIDTH_CAR > coin->getX() &&
                     carX < coin->getX() + coin->getWidth() &&
@@ -177,7 +178,7 @@ void Game::update() {
                     coin->applyEffect(*this);
                 }
             }
-        }*/
+        }
     }
 }
 
@@ -205,9 +206,9 @@ void Game::render() {
         tank->render(cameraX);
     }
 
-    /*for (Coin* coin : coins) {
+    for (Coin* coin : coins) {
         coin->render(cameraX);
-    }*/
+    }
 
     al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0));
 
@@ -256,7 +257,10 @@ void Game::cleanUp() {
     for (FuelTank* tank : fuelTanks) {
         delete tank;
     }
-    fuelTanks.clear();
+    for (Coin* coin : coins) {
+        delete coin;
+    }
+    coins.clear();
     al_destroy_sample(collectSound);
     if (backgroundMusic) {
         al_stop_sample_instance(backgroundMusic);
@@ -278,4 +282,8 @@ void Game::run() {
 void Game::addFuel(float amount) {
     fuel += amount;
     if (fuel > 100.0f) fuel = 100.0f;
+}
+
+void Game::addCoin(int amount) {
+    coin += amount;
 }
