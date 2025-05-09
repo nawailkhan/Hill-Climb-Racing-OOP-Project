@@ -81,7 +81,7 @@ void Coin::render(float cameraX) {
 
 
 void Coin::applyEffect(Game& game) {
-    game.addCoin(5); 
+    game.addCoin(1); 
     al_play_sample(game.collectSound, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, nullptr);
     collect();
 }
