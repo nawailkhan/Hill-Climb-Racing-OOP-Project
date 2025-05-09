@@ -24,11 +24,11 @@ private:
     bool key[ALLEGRO_KEY_MAX];
     float cameraX;
     float fuel;
-    //int coin;
+    int coin;
     Car car;
     Track track;
     std::vector<FuelTank*> fuelTanks;
-    //std::vector<Coin*> coins;
+    std::vector<Coin*> coins;
     ALLEGRO_SAMPLE* music = nullptr;
     ALLEGRO_SAMPLE_INSTANCE* backgroundMusic = nullptr;
 
@@ -43,7 +43,7 @@ private:
 public:
     Game();
     void addFuel(float amount);
-    //void addCoin(int amount);
+    void addCoin(int amount);
     ~Game();
     void run();
     ALLEGRO_SAMPLE* collectSound;
