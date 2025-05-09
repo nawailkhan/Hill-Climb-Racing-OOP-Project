@@ -17,14 +17,21 @@ Game::Game() :
     gameOverShown(false),
     cameraX(0),
     fuel(100.0f),
+    //coin(5),
 
     car(SCREEN_H / 2) {
 
     for (bool& k : key) k = false;
     initialize();
-    for (int i = 0; i < 10; ++i) {  
+    for (int i = 0; i < 10; ++i) {
         fuelTanks.push_back(SpawnFuelTank(track));
-    } 
+    }
+
+    /*for (bool& i : key) i = false;
+    initialize();
+    for (int i = 0; i < 10; ++i) {
+        coins.push_back(SpawnCoin(track));
+    }*/
 }
 
 Game::~Game() {
@@ -41,9 +48,13 @@ void Game::initialize() {
     must_init(al_init_font_addon(), "Font");
     must_init(al_init_native_dialog_addon(), "Native Dialog");
     must_init(al_init_ttf_addon(), "ttf addon");
+    must_init(al_install_audio(), "Audio");
+    must_init(al_init_acodec_addon(), "Audio codecs");
+    must_init(al_reserve_samples(16), "Reserve samples");
+
 
     font = al_create_builtin_font();
-	must_init(font, "font");
+    must_init(font, "font");
 
     display = al_create_display(SCREEN_W, SCREEN_H);
     must_init(display, "display");
@@ -55,21 +66,39 @@ void Game::initialize() {
     must_init(timer, "timer");
 
     font = al_create_builtin_font();
-    font = al_load_ttf_font("arial.ttf", 32, 0); 
+    font = al_load_ttf_font("arial.ttf", 32, 0);
     must_init(font, "font");
 
     al_register_event_source(queue, al_get_keyboard_event_source());
     al_register_event_source(queue, al_get_display_event_source(display));
     al_register_event_source(queue, al_get_timer_event_source(timer));
-   
+
     fuelImage = al_load_bitmap("fueltank.png");
-	must_init(fuelImage, "fuel image");
+    must_init(fuelImage, "fuel image");
 
     sky = al_load_bitmap("sky.png");
     must_init(sky, "sky background");
 
     car_image = al_load_bitmap("car_image.png");
     must_init(car_image, "car image");
+
+    /*coinImage = al_load_bitmap("Coin.jpg");
+    must_init(coinImage, "coinImage");*/
+
+    collectSound = al_load_sample("collect.mp3");   // when fuel or coin collected
+    must_init(collectSound, "collect sound");
+
+    music = al_load_sample("racing.mp3");
+    must_init(music, "Background music");
+
+    backgroundMusic = al_create_sample_instance(music);
+    must_init(backgroundMusic, "Background music instance");
+
+    al_attach_sample_instance_to_mixer(backgroundMusic, al_get_default_mixer());
+    al_set_sample_instance_gain(backgroundMusic, 0.5);  // Adjust volume as needed
+    al_set_sample_instance_playmode(backgroundMusic, ALLEGRO_PLAYMODE_LOOP);
+    al_play_sample_instance(backgroundMusic);
+
 
     al_start_timer(timer);
 }
@@ -138,6 +167,17 @@ void Game::update() {
         //fuel update
         fuel -= 0.095f;
         fuel = std::max(0.0f, fuel);
+
+        /*for (Coin* coin : coins) {
+            if (!coin->isCollected()) {
+                if (carX + WIDTH_CAR > coin->getX() &&
+                    carX < coin->getX() + coin->getWidth() &&
+                    car.getY() + HEIGHT_CAR > coin->getY() &&
+                    car.getY() < coin->getY() + coin->getHeight()) {
+                    coin->applyEffect(*this);
+                }
+            }
+        }*/
     }
 }
 
@@ -165,6 +205,10 @@ void Game::render() {
         tank->render(cameraX);
     }
 
+    /*for (Coin* coin : coins) {
+        coin->render(cameraX);
+    }*/
+
     al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0));
 
     float img_w = al_get_bitmap_width(car_image);
@@ -188,18 +232,18 @@ void Game::render() {
         angle_rad,            // rotation in radians
         0);
 
-	al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0));
-	al_draw_rectangle(20, 20, 20 + 300, 40, al_map_rgb(255, 255, 255), 2);
-	
-	al_draw_textf(font, al_map_rgb(255, 255, 255), 20, 50, 0, "Fuel: %.1f%%", fuel);
-	
-	char scoreText[64];
-	snprintf(scoreText, sizeof(scoreText), "Distance: %d m", score);
-	al_draw_filled_rectangle(SCREEN_W - 280,5, SCREEN_W - 10, 60, al_map_rgba(0, 0, 0, 180));
-	al_draw_text(font, al_map_rgb(255, 255, 255), SCREEN_W - 250, 15, 0, scoreText);
-	
-	
-	al_flip_display();
+    al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0));
+    al_draw_rectangle(20, 20, 20 + 300, 40, al_map_rgb(255, 255, 255), 2);
+
+    al_draw_textf(font, al_map_rgb(255, 255, 255), 20, 50, 0, "Fuel: %.1f%%", fuel);
+
+    char scoreText[64];
+    snprintf(scoreText, sizeof(scoreText), "Distance: %d m", score);
+    al_draw_filled_rectangle(SCREEN_W - 280, 5, SCREEN_W - 10, 60, al_map_rgba(0, 0, 0, 180));
+    al_draw_text(font, al_map_rgb(255, 255, 255), SCREEN_W - 250, 15, 0, scoreText);
+
+
+    al_flip_display();
 }
 
 void Game::cleanUp() {
@@ -213,6 +257,14 @@ void Game::cleanUp() {
         delete tank;
     }
     fuelTanks.clear();
+    al_destroy_sample(collectSound);
+    if (backgroundMusic) {
+        al_stop_sample_instance(backgroundMusic);
+        al_destroy_sample_instance(backgroundMusic);
+    }
+    if (music) al_destroy_sample(music);
+
+
 }
 
 void Game::run() {
