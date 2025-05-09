@@ -18,19 +18,25 @@ Game::Game() :
     cameraX(0),
     fuel(100.0f),
     coin(0),
+    fuelEmpty(false),
 
     car(SCREEN_H / 2) {
 
     for (bool& k : key) k = false;
     initialize();
-    srand(time(0));
-    for (int i = 0; i < 10; ++i) {
-        fuelTanks.push_back(SpawnFuelTank(track));
+    float maxTrackX = track.getSegments().back().x2;
+    int numFuelTanks = 10;
+    for (int i = 0; i < numFuelTanks; ++i) {
+        float sectionStart = (maxTrackX / numFuelTanks) * i;
+        float sectionEnd = sectionStart + (maxTrackX / numFuelTanks);
+        float spawnX = sectionStart + rand() % static_cast<int>(sectionEnd - sectionStart);
+        float spawnY = track.getYAtPosition(spawnX) - 80.0f;
+        fuelTanks.push_back(new FuelTank(spawnX, spawnY));
     }
 
     for (bool& i : key) i = false;
-    srand(time(0) + 1000); 
-    for (int i = 0; i < 10; ++i) {
+    srand(time(0) + 1000);
+    for (int i = 0; i < 15; ++i) {
         coins.push_back(SpawnCoin(track));
     }
 }
@@ -94,6 +100,10 @@ void Game::initialize() {
 
     backgroundMusic = al_create_sample_instance(music);
     must_init(backgroundMusic, "Background music instance");
+
+
+    gameOverImage = al_load_bitmap("game_over.jpg");
+    must_init(gameOverImage, "game over image");
 
     al_attach_sample_instance_to_mixer(backgroundMusic, al_get_default_mixer());
     al_set_sample_instance_gain(backgroundMusic, 0.5);  // Adjust volume as needed
@@ -180,73 +190,84 @@ void Game::update() {
             }
         }
     }
+    if (fuel <= 0 && !fuelEmpty) {
+        fuelEmpty = true;
+        gameOverShown = true;
+    }
+
 }
 
 void Game::render() {
     al_clear_to_color(al_map_rgb(0, 0, 0));
-    al_draw_scaled_bitmap(sky, 0, 0, al_get_bitmap_width(sky), al_get_bitmap_height(sky),
-        0, 0, SCREEN_W, SCREEN_H, 0);
 
-    // track
-    for (const auto& segment : track.getSegments()) {
-        al_draw_line(segment.x1 - cameraX, segment.y1, segment.x2 - cameraX, segment.y2,
-            al_map_rgb(0, 0, 0), 8);
+    if (!gameOverShown) {
+        // Normal game rendering
+        al_draw_scaled_bitmap(sky, 0, 0, al_get_bitmap_width(sky), al_get_bitmap_height(sky),
+            0, 0, SCREEN_W, SCREEN_H, 0);
+
+        // Track
+        for (const auto& segment : track.getSegments()) {
+            al_draw_line(segment.x1 - cameraX, segment.y1, segment.x2 - cameraX, segment.y2,
+                al_map_rgb(0, 0, 0), 8);
+        }
+
+        // Collectibles
+        for (FuelTank* tank : fuelTanks) {
+            tank->render(cameraX);
+        }
+        for (Coin* coin : coins) {
+            coin->render(cameraX);
+        }
+
+        // Car
+        float img_w = al_get_bitmap_width(car_image);
+        float img_h = al_get_bitmap_height(car_image);
+        float scale_x = WIDTH_CAR / img_w;
+        float scale_y = HEIGHT_CAR / img_h;
+        float center_x = CAR_SCREEN_X + WIDTH_CAR / 2;
+        float center_y = car.getY() + HEIGHT_CAR / 2;
+        float angle_rad = car.getAngle() * ALLEGRO_PI / 180.0f;
+
+        al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_INVERSE_ALPHA);
+        al_draw_scaled_rotated_bitmap(
+            car_image,
+            img_w / 2, img_h / 2,
+            center_x, center_y,
+            scale_x, scale_y,
+            angle_rad, 0);
+
+        // UI Elements
+        al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0));
+        al_draw_rectangle(20, 20, 20 + 300, 40, al_map_rgb(255, 255, 255), 2);
+        al_draw_textf(font, al_map_rgb(255, 255, 255), 20, 50, 0, "Fuel: %.1f%%", fuel);
+
+        char scoreText[64];
+        snprintf(scoreText, sizeof(scoreText), "Distance: %d m", score);
+        al_draw_filled_rectangle(SCREEN_W - 280, 5, SCREEN_W - 10, 60, al_map_rgba(0, 0, 0, 180));
+        al_draw_text(font, al_map_rgb(255, 255, 255), SCREEN_W - 250, 15, 0, scoreText);
     }
+    else {
+        // Game Over Screen
+        if (fuelEmpty) {
+            // Center game over image
+            int img_w = al_get_bitmap_width(gameOverImage);
+            int img_h = al_get_bitmap_height(gameOverImage);
+            float draw_x = (SCREEN_W - img_w) / 2;
+            float draw_y = (SCREEN_H - img_h) / 2;
 
-    // car
-    if (!car_image) {
-        al_draw_filled_rectangle(
-            CAR_SCREEN_X, car.getY(),
-            CAR_SCREEN_X + WIDTH_CAR, car.getY() + HEIGHT_CAR,
-            al_map_rgb(255, 0, 0));
-        return;
+            al_draw_bitmap(gameOverImage, draw_x, draw_y, 0);
+
+            // Text below image
+            al_draw_text(font, al_map_rgb(255, 255, 255),
+                SCREEN_W / 2,
+                draw_y + img_h + 20,
+                ALLEGRO_ALIGN_CENTER,
+                "OUT OF FUEL - GAME OVER!");
+        }
     }
-
-    for (FuelTank* tank : fuelTanks) {
-        tank->render(cameraX);
-    }
-
-    for (Coin* coin : coins) {
-        coin->render(cameraX);
-    }
-
-    al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0));
-
-    float img_w = al_get_bitmap_width(car_image);
-    float img_h = al_get_bitmap_height(car_image);
-    float scale_x = WIDTH_CAR / img_w;
-    float scale_y = HEIGHT_CAR / img_h;
-    float center_x = CAR_SCREEN_X + WIDTH_CAR / 2;
-    float center_y = car.getY() + HEIGHT_CAR / 2;
-    float angle_rad = car.getAngle() * ALLEGRO_PI / 180.0f;
-
-    al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_INVERSE_ALPHA); // added these 2 bec it wasnt working w/o
-    // this prevented transparency otherwise the car wasnt visible idk why
-    al_draw_circle(center_x, center_y, 10, al_map_rgb(0, 255, 0), 2);
-    // this draws green circle at car's centre whch makes it easier to identify the problem
-    // the car was being initialozed it was just not visible so the set bender command did the work
-    al_draw_scaled_rotated_bitmap(
-        car_image,
-        img_w / 2, img_h / 2,    // center of bitmap
-        center_x, center_y,   // pos on screen
-        scale_x, scale_y,     // scale factors
-        angle_rad,            // rotation in radians
-        0);
-
-    al_draw_filled_rectangle(20, 20, 20 + (fuel * 3), 40, al_map_rgb(255, 0, 0));
-    al_draw_rectangle(20, 20, 20 + 300, 40, al_map_rgb(255, 255, 255), 2);
-
-    al_draw_textf(font, al_map_rgb(255, 255, 255), 20, 50, 0, "Fuel: %.1f%%", fuel);
-
-    char scoreText[64];
-    snprintf(scoreText, sizeof(scoreText), "Distance: %d m", score);
-    al_draw_filled_rectangle(SCREEN_W - 280, 5, SCREEN_W - 10, 60, al_map_rgba(0, 0, 0, 180));
-    al_draw_text(font, al_map_rgb(255, 255, 255), SCREEN_W - 250, 15, 0, scoreText);
-
 
     al_flip_display();
 }
-
 void Game::cleanUp() {
     al_destroy_font(font);
     al_destroy_display(display);
